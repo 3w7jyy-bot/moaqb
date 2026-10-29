@@ -5,13 +5,14 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>معقب</title>
 
+<!-- إعدادات التطبيق -->
 <meta name="theme-color" content="#1E3A5F">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="معقب">
 <meta name="mobile-web-app-capable" content="yes">
 
-<!-- Manifest يُولَّد تلقائياً عبر JavaScript -->
+<!-- سيتم حقن ملف الـ Manifest هنا تلقائياً بواسطة الجافاسكربت -->
 <link rel="manifest" id="dynamicManifest">
 
 <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700&display=swap" rel="stylesheet">
@@ -700,27 +701,23 @@
 </div>
 
 <script>
-  // ===== PWA: توليد manifest وأيقونات بـ data URLs =====
+  // ==========================================
+  // PWA Magic for Single File
+  // ==========================================
   (function setupPWA() {
     try {
-      // توليد الأيقونات
+      // 1. Generate Icons
       function makeIcon(size) {
         const c = document.createElement('canvas');
         c.width = size; c.height = size;
         const ctx = c.getContext('2d');
         ctx.fillStyle = '#1E3A5F';
-        ctx.beginPath();
-        ctx.arc(size/2, size/2, size/2, 0, Math.PI*2);
-        ctx.fill();
-        ctx.strokeStyle = '#F4A261';
-        ctx.lineWidth = size * 0.04;
-        ctx.beginPath();
-        ctx.arc(size/2, size/2, size/2 - size*0.04, 0, Math.PI*2);
-        ctx.stroke();
+        ctx.beginPath(); ctx.arc(size/2, size/2, size/2, 0, Math.PI*2); ctx.fill();
+        ctx.strokeStyle = '#F4A261'; ctx.lineWidth = size * 0.04;
+        ctx.beginPath(); ctx.arc(size/2, size/2, size/2 - size*0.04, 0, Math.PI*2); ctx.stroke();
         ctx.fillStyle = '#F4A261';
         ctx.font = `bold ${size*0.5}px Tajawal, Arial, sans-serif`;
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
+        ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
         ctx.fillText('م', size/2, size/2 + size*0.05);
         return c.toDataURL('image/png');
       }
@@ -728,68 +725,58 @@
       const icon192 = makeIcon(192);
       const icon512 = makeIcon(512);
 
-      // Manifest كـ data URL (كروم يقبله)
+      // 2. Create Manifest Data URL
       const manifest = {
         name: "معقب",
         short_name: "معقب",
         description: "تطبيق معقب للنشر والتعقيب",
-        start_url: "./index.html",
-        scope: "./",
+        start_url: window.location.href,
+        scope: window.location.href,
         display: "standalone",
         orientation: "portrait",
         background_color: "#F8F9FA",
         theme_color: "#1E3A5F",
-        lang: "ar",
-        dir: "rtl",
+        lang: "ar", dir: "rtl",
         icons: [
           { src: icon192, sizes: "192x192", type: "image/png", purpose: "any maskable" },
           { src: icon512, sizes: "512x512", type: "image/png", purpose: "any maskable" }
         ]
       };
-
-      // استخدام data URL بدل Blob — كروم يقبله للتثبيت
+      
       const manifestDataURL = 'data:application/manifest+json;charset=utf-8,' + encodeURIComponent(JSON.stringify(manifest));
       const manifestLink = document.getElementById('dynamicManifest');
       if (manifestLink) manifestLink.href = manifestDataURL;
 
-      // أيقونات Apple و Favicon
+      // 3. Add Icons
       const appleLink = document.createElement('link');
       appleLink.rel = 'apple-touch-icon';
       appleLink.href = icon192;
       document.head.appendChild(appleLink);
 
       const favicon = document.createElement('link');
-      favicon.rel = 'icon';
-      favicon.type = 'image/png';
-      favicon.href = icon192;
+      favicon.rel = 'icon'; favicon.type = 'image/png'; favicon.href = icon192;
       document.head.appendChild(favicon);
 
-      // Service Worker من data URL
+      // 4. Register Service Worker from Data URL
       if ('serviceWorker' in navigator) {
         const swCode = `
           const CACHE_NAME = 'maqab-v1';
-          self.addEventListener('install', (e) => {
-            e.waitUntil(self.skipWaiting());
-          });
-          self.addEventListener('activate', (e) => {
-            e.waitUntil(self.clients.claim());
-          });
+          self.addEventListener('install', (e) => { e.waitUntil(self.skipWaiting()); });
+          self.addEventListener('activate', (e) => { e.waitUntil(self.clients.claim()); });
           self.addEventListener('fetch', (e) => {
             if (e.request.method !== 'GET') return;
             e.respondWith(fetch(e.request).catch(() => caches.match(e.request)));
           });
         `;
         const swURL = 'data:application/javascript;charset=utf-8,' + encodeURIComponent(swCode);
-        navigator.serviceWorker.register(swURL)
-          .then(reg => console.log('✅ SW جاهز:', reg.scope))
-          .catch(err => console.warn('⚠️ فشل SW:', err));
+        navigator.serviceWorker.register(swURL).catch(err => console.warn('SW Error:', err));
       }
-    } catch(e) {
-      console.warn('PWA setup failed:', e);
-    }
+    } catch(e) { console.warn('PWA Setup Error:', e); }
   })();
 
-  // ===== شارة التوثيق =====
+  // ==========================================
+  // App Logic
+  // ==========================================
   function verifiedBadgeSVG(size = 18) {
     return `<span class="verified-badge" style="width:${size}px;height:${size}px;" title="حساب موثّق">
       <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -799,7 +786,6 @@
     </span>`;
   }
 
-  // ===== حالة التطبيق =====
   const users = {
     me:   { id:'me',   name:'معقب', avatar:'م', photo:null, bio:'عقّب بأسلوبك ✍️', isMe:true, verified:false },
     ahmed:{ id:'ahmed',name:'أحمد', avatar:'أ', photo:null, bio:'مطوّر ومهتم بالتقنية', isMe:false, verified:true },
@@ -819,9 +805,7 @@
   const POSTS_KEY = 'maqab_posts';
   const INTERACTIONS_KEY = 'maqab_interactions';
 
-  function savePosts() {
-    try { localStorage.setItem(POSTS_KEY, JSON.stringify(posts)); } catch(e) {}
-  }
+  function savePosts() { try { localStorage.setItem(POSTS_KEY, JSON.stringify(posts)); } catch(e) {} }
   function loadPosts() {
     try {
       const raw = localStorage.getItem(POSTS_KEY);
@@ -830,12 +814,8 @@
     } catch(e) { posts = []; }
   }
 
-  function loadInteractions() {
-    try { return JSON.parse(localStorage.getItem(INTERACTIONS_KEY) || '{}'); } catch(e) { return {}; }
-  }
-  function saveInteractions(data) {
-    try { localStorage.setItem(INTERACTIONS_KEY, JSON.stringify(data)); } catch(e) {}
-  }
+  function loadInteractions() { try { return JSON.parse(localStorage.getItem(INTERACTIONS_KEY) || '{}'); } catch(e) { return {}; } }
+  function saveInteractions(data) { try { localStorage.setItem(INTERACTIONS_KEY, JSON.stringify(data)); } catch(e) {} }
   function getMyInteractions() {
     const all = loadInteractions();
     if (!currentUserKey) return { likes:[], retweets:[], views:[] };
@@ -850,12 +830,8 @@
     saveInteractions(all);
   }
 
-  function loadAccounts() {
-    try { return JSON.parse(localStorage.getItem(ACCOUNTS_KEY) || '[]'); } catch(e) { return []; }
-  }
-  function saveAccounts(accounts) {
-    try { localStorage.setItem(ACCOUNTS_KEY, JSON.stringify(accounts)); } catch(e) {}
-  }
+  function loadAccounts() { try { return JSON.parse(localStorage.getItem(ACCOUNTS_KEY) || '[]'); } catch(e) { return []; } }
+  function saveAccounts(accounts) { try { localStorage.setItem(ACCOUNTS_KEY, JSON.stringify(accounts)); } catch(e) {} }
   function findAccount(identifier) {
     const accounts = loadAccounts();
     const id = (identifier || '').trim().toLowerCase();
@@ -864,13 +840,8 @@
 
   function saveSession() {
     const session = {
-      loggedIn: true,
-      userKey: currentUserKey,
-      me: {
-        name: users.me.name, avatar: users.me.avatar,
-        photo: users.me.photo, bio: users.me.bio,
-        verified: users.me.verified, followers: followers.me
-      }
+      loggedIn: true, userKey: currentUserKey,
+      me: { name: users.me.name, avatar: users.me.avatar, photo: users.me.photo, bio: users.me.bio, verified: users.me.verified, followers: followers.me }
     };
     try { localStorage.setItem(SESSION_KEY, JSON.stringify(session)); } catch(e) {}
   }
@@ -890,9 +861,7 @@
       return true;
     } catch(e) { return false; }
   }
-  function clearSession() {
-    try { localStorage.removeItem(SESSION_KEY); } catch(e) {}
-  }
+  function clearSession() { try { localStorage.removeItem(SESSION_KEY); } catch(e) {} }
 
   function openSignup() {
     document.getElementById('loginScreen').classList.remove('show');
@@ -907,8 +876,7 @@
   }
   function showError(elementId, message) {
     const el = document.getElementById(elementId);
-    el.textContent = message;
-    el.classList.add('show');
+    el.textContent = message; el.classList.add('show');
   }
 
   function doSignup() {
@@ -935,16 +903,11 @@
     const fullName = `${first} ${last}`;
     const username = first + last;
     const account = { firstName:first, lastName:last, fullName, username, email, password:pass, createdAt:Date.now() };
-    accounts.push(account);
-    saveAccounts(accounts);
+    accounts.push(account); saveAccounts(accounts);
 
     currentUserKey = email.toLowerCase();
-    users.me.name = fullName;
-    users.me.avatar = first.charAt(0);
-    users.me.bio = 'عقّب بأسلوبك ✍️';
-    users.me.photo = null;
-    users.me.verified = false;
-    followers.me = 0;
+    users.me.name = fullName; users.me.avatar = first.charAt(0);
+    users.me.bio = 'عقّب بأسلوبك ✍️'; users.me.photo = null; users.me.verified = false; followers.me = 0;
     saveSession();
 
     alert(`🎉 مرحباً ${fullName}!\nتم إنشاء حسابك بنجاح.`);
@@ -966,30 +929,23 @@
     currentUserKey = account.email.toLowerCase();
     users.me.name = account.fullName || account.username;
     users.me.avatar = (account.firstName || account.username).charAt(0);
-    users.me.bio = 'عقّب بأسلوبك ✍️';
-    users.me.photo = null;
-    users.me.verified = false;
-    followers.me = 0;
+    users.me.bio = 'عقّب بأسلوبك ✍️'; users.me.photo = null; users.me.verified = false; followers.me = 0;
 
-    saveSession();
-    enterApp();
+    saveSession(); enterApp();
   }
 
   function enterApp() {
     document.getElementById('loginScreen').classList.remove('show');
     document.getElementById('signupScreen').classList.remove('show');
     document.getElementById('app').style.display = 'block';
-    loadPosts();
-    renderFeed();
+    loadPosts(); renderFeed();
     showPage('feed', document.querySelectorAll('nav button')[0]);
   }
 
   function doLogout() {
     if (!confirm('هل تريد تسجيل الخروج؟')) return;
-    clearSession();
-    currentUserKey = null;
-    document.getElementById('loginUser').value = '';
-    document.getElementById('loginPass').value = '';
+    clearSession(); currentUserKey = null;
+    document.getElementById('loginUser').value = ''; document.getElementById('loginPass').value = '';
     document.getElementById('loginError').classList.remove('show');
     document.getElementById('app').style.display = 'none';
     document.getElementById('signupScreen').classList.remove('show');
@@ -1011,9 +967,7 @@
     if (post.userId !== 'me') return alert('لا يمكنك حذف منشور ليس لك.');
     if (!confirm('هل تريد حذف هذا المنشور نهائياً؟')) return;
     posts = posts.filter(p => p.id !== postId);
-    savePosts();
-    renderFeed();
-    renderMyProfile();
+    savePosts(); renderFeed(); renderMyProfile();
     alert('✅ تم حذف المنشور.');
   }
 
@@ -1030,11 +984,8 @@
     if (newDetails === null) return;
     if (!newDetails.trim()) return alert('التفاصيل لا يمكن أن تكون فارغة!');
 
-    post.title = newTitle.trim();
-    post.details = newDetails.trim();
-    savePosts();
-    renderFeed();
-    renderMyProfile();
+    post.title = newTitle.trim(); post.details = newDetails.trim();
+    savePosts(); renderFeed(); renderMyProfile();
     alert('✅ تم تعديل المنشور.');
   }
 
@@ -1062,9 +1013,7 @@
       post.likes = (post.likes || 0) + 1;
       updateMyInteractions(i => { if (!i.likes.includes(postId)) i.likes.push(postId); });
     }
-    savePosts();
-    renderFeed();
-    renderMyProfile();
+    savePosts(); renderFeed(); renderMyProfile();
   }
 
   function toggleRetweet(postId) {
@@ -1091,9 +1040,7 @@
         retweetOfAuthor: originalAuthor ? originalAuthor.name : 'مستخدم'
       });
     }
-    savePosts();
-    renderFeed();
-    renderMyProfile();
+    savePosts(); renderFeed(); renderMyProfile();
   }
 
   function addFakeFollowers() { followers.me += 50; saveSession(); renderVerifyConditions(); }
@@ -1157,15 +1104,13 @@
 
   function resetFileLabel(labelId, defaultText) {
     const label = document.getElementById(labelId);
-    label.classList.remove('has-file');
-    label.innerHTML = `<span>${defaultText}</span>`;
+    label.classList.remove('has-file'); label.innerHTML = `<span>${defaultText}</span>`;
   }
   function fileChosen(inputId, labelId) {
     const input = document.getElementById(inputId);
     const label = document.getElementById(labelId);
     if (input.files.length > 0) {
-      label.classList.add('has-file');
-      label.innerHTML = `<span>✅ ${input.files[0].name}</span>`;
+      label.classList.add('has-file'); label.innerHTML = `<span>✅ ${input.files[0].name}</span>`;
     }
   }
   function submitVerification() {
@@ -1186,14 +1131,12 @@
     document.getElementById('pendingContent').style.display = 'block';
   }
   function approveDemo() {
-    users.me.verified = true;
-    saveSession();
+    users.me.verified = true; saveSession();
     alert('🎉 تم توثيق حسابك بنجاح!\n\nالآن يمكنك تعديل وحذف منشوراتك من صفحة ملفك الشخصي.');
     document.querySelector('.conditions-box').style.display = 'block';
     document.getElementById('conditionsMessage').style.display = 'block';
     showPage('profile', document.querySelectorAll('nav button')[2]);
-    renderMyProfile();
-    renderFeed();
+    renderMyProfile(); renderFeed();
   }
 
   function openEditProfile() {
@@ -1203,8 +1146,7 @@
     document.getElementById('editProfilePage').classList.add('show');
     document.getElementById('editName').value = users.me.name;
     document.getElementById('editBio').value = users.me.bio;
-    editPhotoTemp = users.me.photo;
-    renderEditAvatar();
+    editPhotoTemp = users.me.photo; renderEditAvatar();
     document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
     lastPage = 'profile';
   }
@@ -1244,12 +1186,9 @@
     const newName = document.getElementById('editName').value.trim();
     const newBio = document.getElementById('editBio').value.trim();
     if (!newName) return alert('الاسم لا يمكن أن يكون فارغاً!');
-    users.me.name = newName;
-    users.me.avatar = newName.charAt(0);
+    users.me.name = newName; users.me.avatar = newName.charAt(0);
     users.me.bio = newBio || 'عقّب بأسلوبك ✍️';
-    users.me.photo = editPhotoTemp;
-    saveSession();
-    renderFeed();
+    users.me.photo = editPhotoTemp; saveSession(); renderFeed();
     alert('✅ تم حفظ التعديلات بنجاح!');
     showPage('profile', document.querySelectorAll('nav button')[2]);
     renderMyProfile();
@@ -1272,8 +1211,7 @@
     const user = users[userId];
     if (!user) return;
     if (user.isMe) {
-      showPage('profile', document.querySelectorAll('nav button')[2]);
-      renderMyProfile();
+      showPage('profile', document.querySelectorAll('nav button')[2]); renderMyProfile();
       return;
     }
     currentUserId = userId;
@@ -1314,8 +1252,7 @@
       const nBadgeWrap = document.createElement('span');
       nBadgeWrap.innerHTML = verifiedBadgeSVG(20);
       const nBadge = nBadgeWrap.firstElementChild;
-      nBadge.style.display = 'inline-flex';
-      nBadge.style.flexShrink = '0';
+      nBadge.style.display = 'inline-flex'; nBadge.style.flexShrink = '0';
       nameWrap.appendChild(nBadge);
     }
   }
@@ -1325,11 +1262,9 @@
     document.getElementById('uFollowers').textContent = followers[currentUserId];
     const btn = document.getElementById('followBtn');
     if (following.has(currentUserId)) {
-      btn.className = 'follow-btn following';
-      btn.innerHTML = 'إلغاء المتابعة';
+      btn.className = 'follow-btn following'; btn.innerHTML = 'إلغاء المتابعة';
     } else {
-      btn.className = 'follow-btn follow';
-      btn.innerHTML = 'متابعة';
+      btn.className = 'follow-btn follow'; btn.innerHTML = 'متابعة';
     }
   }
   function toggleFollow() {
@@ -1426,8 +1361,7 @@
     const post = posts.find(p => p.id === postId);
     if (!post) return;
     post.comments.push({ userId: 'me', text });
-    inputEl.value = '';
-    savePosts();
+    inputEl.value = ''; savePosts();
     const section = document.getElementById(`comments-${postId}`);
     section.querySelector('.comments-list').innerHTML = renderComments(post.comments);
     const actions = section.closest('.post').querySelector('.post-actions');
@@ -1451,12 +1385,10 @@
     const verifyBtn = document.getElementById('verifyBtn');
     if (users.me.verified) {
       verifyBtn.className = 'verify-btn verified';
-      verifyBtn.innerHTML = 'حساب موثّق';
-      verifyBtn.onclick = null;
+      verifyBtn.innerHTML = 'حساب موثّق'; verifyBtn.onclick = null;
     } else {
       verifyBtn.className = 'verify-btn';
-      verifyBtn.innerHTML = 'توثيق الحساب';
-      verifyBtn.onclick = openVerify;
+      verifyBtn.innerHTML = 'توثيق الحساب'; verifyBtn.onclick = openVerify;
     }
 
     const myPosts = posts.filter(p => p.userId === 'me');
@@ -1495,16 +1427,13 @@
     if (!title) return alert('اكتب اسم المنشور أولاً!');
     if (!details) return alert('اكتب تفاصيل المنشور!');
     posts.unshift({
-      id: Date.now(), userId: 'me',
-      title, details,
-      views: 0, likes: 0, retweets: 0,
-      comments: []
+      id: Date.now(), userId: 'me', title, details,
+      views: 0, likes: 0, retweets: 0, comments: []
     });
     savePosts();
     document.getElementById('postTitle').value = '';
     document.getElementById('postDetails').value = '';
-    renderFeed();
-    showPage('feed', document.querySelectorAll('nav button')[0]);
+    renderFeed(); showPage('feed', document.querySelectorAll('nav button')[0]);
   }
 
   function escapeHtml(str) {
@@ -1553,9 +1482,7 @@
     localStorage.setItem('maqab_install_dismissed', '1');
   });
 
-  window.addEventListener('appinstalled', () => {
-    installBanner.classList.remove('show');
-  });
+  window.addEventListener('appinstalled', () => { installBanner.classList.remove('show'); });
 
   window.addEventListener('DOMContentLoaded', () => {
     if (loadSession()) { enterApp(); }
