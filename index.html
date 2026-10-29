@@ -1,0 +1,1503 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>معقب</title>
+
+<!-- PWA -->
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#1E3A5F">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="معقب">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="icon" type="image/png" href="icons/icon-192.png">
+<meta name="mobile-web-app-capable" content="yes">
+
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; font-family:'Tajawal',sans-serif; }
+  * { -webkit-tap-highlight-color: transparent !important; -webkit-touch-callout: none; }
+  button, a, input, textarea, span, div, nav button, label {
+    -webkit-tap-highlight-color: transparent !important;
+    outline: none !important;
+    -webkit-appearance: none; appearance: none;
+  }
+  button, .post-actions span, .post-head, nav button { user-select: none; -webkit-user-select: none; }
+  button:focus, a:focus, input:focus, textarea:focus { outline: none !important; box-shadow: none; }
+
+  body { background:#F8F9FA; max-width:480px; margin:0 auto; padding-bottom:80px; }
+  body.keyboard-open { padding-bottom:0 !important; }
+  body.keyboard-open nav { display:none !important; }
+
+  header {
+    background:#1E3A5F; color:#fff; padding:16px;
+    display:flex; justify-content:space-between; align-items:center;
+  }
+  header h1 { font-size:22px; }
+  .btn-add {
+    background:#F4A261; border:none; color:#fff; width:40px; height:40px;
+    border-radius:50%; font-size:24px; cursor:pointer;
+  }
+
+  .post {
+    background:#fff; margin:12px; padding:16px; border-radius:14px;
+    box-shadow:0 2px 8px rgba(0,0,0,0.06);
+  }
+  .post-head {
+    display:flex; align-items:center; gap:10px; margin-bottom:10px;
+    cursor:pointer; padding:4px; border-radius:8px; transition:background 0.2s;
+  }
+  .post-head:hover { background:#FFF5EB; }
+  .post-head strong { color:#1E3A5F; display:flex; align-items:center; gap:4px; }
+
+  .verified-badge {
+    display:inline-flex; align-items:center; justify-content:center;
+    flex-shrink:0; vertical-align:middle;
+  }
+  .verified-badge svg {
+    width:100%; height:100%; display:block;
+    filter:drop-shadow(0 1px 2px rgba(29,161,242,0.35));
+  }
+
+  .avatar {
+    width:42px; height:42px; border-radius:50%;
+    background:#F4A261; display:flex; align-items:center;
+    justify-content:center; color:#fff; font-weight:bold; flex-shrink:0;
+    overflow:hidden;
+  }
+  .avatar img { width:100%; height:100%; object-fit:cover; }
+  .avatar.sm { width:32px; height:32px; font-size:14px; }
+
+  .post-title { font-size:17px; font-weight:700; color:#1E3A5F; margin-bottom:6px; }
+  .post-body { color:#333; line-height:1.6; margin-bottom:12px; font-size:15px; white-space:pre-wrap; }
+
+  .post-actions { display:flex; gap:18px; color:#666; font-size:14px; flex-wrap:wrap; }
+  .post-actions span {
+    cursor:pointer; user-select:none;
+    display:inline-flex; align-items:center; gap:4px;
+    transition:color 0.2s;
+  }
+  .post-actions span:hover { color:#F4A261; }
+  .post-actions span.liked { color:#e63946; }
+  .post-actions span.retweeted { color:#2e8b57; }
+
+  .comments-section {
+    display:none; margin-top:14px; padding-top:14px;
+    border-top:1px dashed #e0e0e0;
+  }
+  .comments-section.open { display:block; }
+
+  .comment-item {
+    display:flex; gap:8px; margin-bottom:10px;
+    padding:8px; background:#F8F9FA; border-radius:10px;
+  }
+  .comment-body { flex:1; }
+  .comment-author { font-weight:700; color:#1E3A5F; font-size:13px; margin-bottom:2px; display:flex; align-items:center; gap:4px; }
+  .comment-text { color:#444; font-size:13px; line-height:1.4; }
+
+  .comment-form { display:flex; gap:8px; margin-top:10px; }
+  .comment-form input {
+    flex:1; padding:10px 12px; border:2px solid #e0e0e0;
+    border-radius:10px; font-size:13px; font-family:inherit;
+  }
+  .comment-form input:focus { outline:none; border-color:#F4A261; }
+  .comment-form button {
+    background:#1E3A5F; color:#fff; border:none;
+    padding:0 16px; border-radius:10px; font-size:13px;
+    cursor:pointer; font-family:inherit;
+  }
+
+  .no-comments { text-align:center; color:#aaa; font-size:13px; padding:8px; }
+
+  #composer { display:none; padding:16px; }
+  #composer.show { display:block; }
+  #composer label {
+    display:block; font-weight:700; color:#1E3A5F;
+    margin:16px 0 8px; font-size:16px;
+  }
+  #composer input[type="text"], #composer textarea {
+    display:block !important;
+    width:100%; min-height:50px; padding:14px;
+    border:2px solid #1E3A5F; border-radius:10px;
+    font-size:16px; font-family:'Tajawal',sans-serif;
+    background:#FFFFFF !important; color:#000000 !important;
+  }
+  #composer textarea { min-height:180px; resize:vertical; }
+  #composer input:focus, #composer textarea:focus { outline:none; border-color:#F4A261; }
+  .composer-actions { margin-top:20px; }
+  .btn-publish {
+    background:#1E3A5F; color:#fff; border:none; padding:14px;
+    border-radius:10px; font-size:16px; font-weight:700;
+    cursor:pointer; width:100%; font-family:inherit;
+  }
+
+  nav {
+    position:fixed; bottom:0; width:100%; max-width:480px;
+    background:#fff; display:flex; justify-content:space-around;
+    padding:8px 0 10px; border-top:1px solid #e0e0e0;
+    z-index:100;
+  }
+  nav button {
+    background:none; border:none; cursor:pointer; color:#999;
+    display:flex; flex-direction:column; align-items:center; gap:2px;
+    font-family:inherit; padding:4px 12px; transition:color 0.2s;
+  }
+  nav button .nav-icon { font-size:22px; line-height:1; }
+  nav button .nav-label { font-size:11px; font-weight:700; color:#999; transition:color 0.2s; }
+  nav button.active { color:#1E3A5F; }
+  nav button.active .nav-label { color:#1E3A5F; }
+
+  #feed, #profile, #userProfile, #verifyPage, #editProfilePage { display:none; }
+  #feed.show, #profile.show, #userProfile.show, #verifyPage.show, #editProfilePage.show { display:block; }
+
+  #profile, #userProfile { padding:24px 16px; }
+  .profile-head { text-align:center; margin-bottom:24px; }
+
+  .profile-avatar {
+    width:90px; height:90px; border-radius:50%;
+    background:#F4A261; color:#fff;
+    display:flex; align-items:center; justify-content:center;
+    font-size:36px; font-weight:bold; margin:0 auto 12px;
+    position:relative;
+  }
+  .profile-avatar .inner {
+    width:100%; height:100%; border-radius:50%;
+    display:flex; align-items:center; justify-content:center;
+    overflow:hidden; background:#F4A261;
+  }
+  .profile-avatar .inner img { width:100%; height:100%; object-fit:cover; }
+
+  .profile-name {
+    font-size:22px; color:#1E3A5F; margin-bottom:4px;
+    display:flex; align-items:center; justify-content:center; gap:8px;
+    flex-wrap:wrap;
+  }
+  .profile-bio { color:#666; font-size:14px; }
+
+  .profile-stats {
+    display:flex; justify-content:center; gap:12px; margin-top:20px;
+  }
+  .stat-box {
+    background:#fff; padding:14px 24px; border-radius:12px;
+    box-shadow:0 2px 8px rgba(0,0,0,0.06);
+    text-align:center; min-width:100px;
+  }
+  .stat-box strong { display:block; font-size:24px; color:#1E3A5F; margin-bottom:2px; }
+  .stat-box small { color:#666; font-size:13px; }
+
+  .profile-actions {
+    display:flex; flex-direction:column; gap:10px; align-items:center;
+    margin-top:20px;
+  }
+
+  .edit-profile-btn {
+    display:inline-flex; align-items:center; gap:6px;
+    padding:10px 28px; border-radius:24px;
+    font-size:15px; font-weight:700; cursor:pointer;
+    font-family:inherit; transition:all 0.2s;
+    background:#fff; color:#F4A261; border:2px solid #F4A261;
+  }
+  .edit-profile-btn:hover { background:#F4A261; color:#fff; }
+
+  .verify-btn {
+    display:inline-flex; align-items:center; gap:6px;
+    padding:10px 28px; border-radius:24px;
+    font-size:15px; font-weight:700; cursor:pointer;
+    font-family:inherit; transition:all 0.2s;
+    background:#1DA1F2; color:#fff; border:2px solid #1DA1F2;
+  }
+  .verify-btn:hover { background:#1a8cd8; }
+  .verify-btn.verified {
+    background:#fff; color:#1DA1F2; border:2px solid #1DA1F2; cursor:default;
+  }
+
+  .follow-btn {
+    display:inline-flex; align-items:center; gap:6px;
+    padding:10px 28px; border-radius:24px; font-size:15px; font-weight:700;
+    cursor:pointer; font-family:inherit; transition:all 0.2s;
+  }
+  .follow-btn.follow { background:#F4A261; color:#fff; border:2px solid #F4A261; }
+  .follow-btn.following { background:#fff; color:#1E3A5F; border:2px solid #1E3A5F; }
+
+  .logout-btn {
+    display:inline-flex; align-items:center; justify-content:center;
+    padding:10px 28px; border-radius:24px; font-size:15px; font-weight:700;
+    cursor:pointer; font-family:inherit; transition:all 0.2s;
+    background:#e63946; color:#fff; border:2px solid #e63946;
+  }
+  .logout-btn:hover { background:#c92a36; border-color:#c92a36; }
+
+  .my-posts-title {
+    font-size:18px; font-weight:700; color:#1E3A5F;
+    margin:24px 0 12px; display:flex; align-items:center; gap:8px;
+  }
+  .my-post {
+    background:#fff; padding:14px; border-radius:12px;
+    margin-bottom:10px; box-shadow:0 2px 6px rgba(0,0,0,0.05);
+    border-right:4px solid #F4A261;
+  }
+  .my-post-title { font-weight:700; color:#1E3A5F; margin-bottom:4px; font-size:15px; }
+  .my-post-body {
+    color:#555; font-size:13px; line-height:1.5;
+    display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical;
+    overflow:hidden;
+  }
+  .my-post-stats {
+    margin-top:8px; color:#888; font-size:12px;
+  }
+  .my-post-actions {
+    display:flex; gap:8px; margin-top:10px;
+    padding-top:10px; border-top:1px dashed #e0e0e0;
+  }
+  .my-post-actions button {
+    flex:1; padding:8px 10px; border-radius:8px;
+    font-size:12px; font-weight:700; cursor:pointer;
+    font-family:inherit; transition:all 0.2s;
+  }
+  .btn-edit-post {
+    background:#fff; color:#1DA1F2; border:2px solid #1DA1F2;
+  }
+  .btn-edit-post:hover { background:#1DA1F2; color:#fff; }
+  .btn-delete-post {
+    background:#fff; color:#e63946; border:2px solid #e63946;
+  }
+  .btn-delete-post:hover { background:#e63946; color:#fff; }
+
+  .empty-posts { text-align:center; color:#999; padding:30px 0; font-size:14px; }
+
+  .back-btn {
+    background:#fff; border:2px solid #1E3A5F; color:#1E3A5F;
+    padding:8px 16px; border-radius:10px; font-size:14px;
+    cursor:pointer; margin-bottom:16px; font-family:inherit;
+  }
+
+  #editProfilePage { padding:24px 16px; }
+  .edit-header { text-align:center; margin-bottom:24px; }
+  .edit-title { font-size:22px; font-weight:700; color:#1E3A5F; margin-bottom:6px; }
+  .edit-desc { color:#666; font-size:14px; }
+
+  .edit-avatar-wrap {
+    position:relative; width:100px; height:100px; margin:0 auto 24px;
+  }
+  .edit-avatar {
+    width:100px; height:100px; border-radius:50%;
+    background:#F4A261; color:#fff;
+    display:flex; align-items:center; justify-content:center;
+    font-size:40px; font-weight:bold; overflow:hidden;
+    cursor:pointer; transition:transform 0.2s;
+  }
+  .edit-avatar:hover { transform:scale(1.03); }
+  .edit-avatar img { width:100%; height:100%; object-fit:cover; }
+
+  .edit-avatar-overlay {
+    position:absolute; inset:0; border-radius:50%;
+    background:rgba(0,0,0,0.4);
+    display:flex; align-items:center; justify-content:center;
+    color:#fff; font-size:26px; pointer-events:none;
+  }
+
+  .edit-avatar-camera {
+    position:absolute; bottom:-4px; left:-4px;
+    width:34px; height:34px; border-radius:50%;
+    background:#F4A261; color:#fff; border:3px solid #fff;
+    display:flex; align-items:center; justify-content:center;
+    font-size:15px; pointer-events:none;
+  }
+
+  .edit-form {
+    background:#fff; padding:20px; border-radius:14px;
+    box-shadow:0 2px 8px rgba(0,0,0,0.06);
+  }
+  .edit-form .form-group { margin-bottom:18px; }
+  .edit-form label {
+    display:block; font-weight:700; color:#1E3A5F;
+    margin-bottom:6px; font-size:14px;
+  }
+  .edit-form input[type="text"], .edit-form textarea {
+    width:100%; padding:12px 14px;
+    border:2px solid #e0e0e0; border-radius:10px;
+    font-size:15px; font-family:inherit;
+  }
+  .edit-form input[type="text"]:focus, .edit-form textarea:focus {
+    outline:none; border-color:#F4A261;
+  }
+  .edit-form textarea { min-height:90px; resize:vertical; }
+
+  .btn-save-profile {
+    width:100%; margin-top:10px; padding:14px;
+    background:#F4A261; color:#fff; border:none;
+    border-radius:12px; font-size:16px; font-weight:700;
+    cursor:pointer; font-family:inherit;
+    transition:background 0.2s;
+  }
+  .btn-save-profile:hover { background:#e8925a; }
+
+  #verifyPage { padding:24px 16px; }
+  .verify-header { text-align:center; margin-bottom:20px; }
+  .verify-icon { font-size:48px; margin-bottom:8px; }
+  .verify-title { font-size:22px; font-weight:700; color:#1E3A5F; margin-bottom:6px; }
+  .verify-desc { color:#666; font-size:14px; line-height:1.5; }
+
+  .verify-form {
+    background:#fff; padding:20px; border-radius:14px;
+    box-shadow:0 2px 8px rgba(0,0,0,0.06);
+  }
+  .verify-form .form-group { margin-bottom:18px; }
+  .verify-form label {
+    display:block; font-weight:700; color:#1E3A5F;
+    margin-bottom:6px; font-size:14px;
+  }
+  .verify-form label::after { content:" *"; color:#e63946; }
+  .verify-form input[type="text"] {
+    width:100%; padding:12px 14px;
+    border:2px solid #e0e0e0; border-radius:10px;
+    font-size:15px; font-family:inherit;
+  }
+  .verify-form input[type="text"]:focus { outline:none; border-color:#F4A261; }
+  .file-upload { display:flex; flex-direction:column; gap:8px; }
+  .file-upload input[type="file"] { display:none; }
+  .file-label {
+    display:flex; align-items:center; justify-content:center; gap:8px;
+    padding:16px; border:2px dashed #c0c0c0; border-radius:10px;
+    cursor:pointer; color:#666; font-size:14px;
+    transition:all 0.2s; background:#FAFAFA;
+  }
+  .file-label:hover { border-color:#F4A261; background:#FFF9F3; color:#F4A261; }
+  .file-label.has-file {
+    border-color:#1DA1F2; background:#E8F5FE; color:#1DA1F2;
+    border-style:solid;
+  }
+  .btn-submit-verify {
+    width:100%; margin-top:10px; padding:14px;
+    background:#1DA1F2; color:#fff; border:none;
+    border-radius:12px; font-size:16px; font-weight:700;
+    cursor:pointer; font-family:inherit;
+  }
+  .btn-submit-verify:hover { background:#1a8cd8; }
+
+  .pending-box {
+    text-align:center; padding:40px 20px;
+    background:#fff; border-radius:14px;
+    box-shadow:0 2px 8px rgba(0,0,0,0.06);
+  }
+  .pending-icon { font-size:56px; margin-bottom:12px; }
+  .pending-title { font-size:20px; font-weight:700; color:#F4A261; margin-bottom:8px; }
+  .pending-desc { color:#666; font-size:14px; line-height:1.6; }
+
+  .conditions-box {
+    background:#fff; padding:16px; border-radius:14px;
+    box-shadow:0 2px 8px rgba(0,0,0,0.06);
+    margin-bottom:16px;
+  }
+  .conditions-title {
+    font-weight:700; color:#1E3A5F; font-size:15px;
+    margin-bottom:12px; display:flex; align-items:center; gap:6px;
+  }
+  .condition-item {
+    display:flex; align-items:flex-start; gap:10px;
+    padding:10px 0; border-bottom:1px solid #f0f0f0;
+    font-size:14px;
+  }
+  .condition-item:last-child { border-bottom:none; }
+  .condition-icon {
+    width:22px; height:22px; border-radius:50%;
+    display:flex; align-items:center; justify-content:center;
+    font-size:13px; font-weight:bold; flex-shrink:0;
+    margin-top:1px;
+  }
+  .condition-icon.pass { background:#e6f9ee; color:#2e8b57; }
+  .condition-icon.fail { background:#ffe8e8; color:#e63946; }
+  .condition-text { flex:1; color:#444; line-height:1.5; }
+  .condition-text strong { color:#1E3A5F; }
+  .condition-detail { font-size:12px; color:#888; margin-top:2px; }
+
+  .conditions-fail-msg {
+    background:#FFF3E0; border:1px solid #F4A261;
+    color:#8a5a1f; padding:12px 14px; border-radius:10px;
+    font-size:14px; text-align:center; margin-bottom:16px;
+    line-height:1.6;
+  }
+  .conditions-pass-msg {
+    background:#E8F5E9; border:1px solid #4CAF50;
+    color:#2e7d32; padding:12px 14px; border-radius:10px;
+    font-size:14px; text-align:center; margin-bottom:16px;
+    line-height:1.6;
+  }
+
+  #loginScreen, #signupScreen {
+    display:none; min-height:100vh;
+    background:linear-gradient(135deg, #1E3A5F 0%, #2d5a8c 100%);
+    padding:24px; padding-top:60px;
+  }
+  #loginScreen.show, #signupScreen.show { display:block; }
+
+  .login-box {
+    background:#fff; border-radius:20px; padding:32px 24px;
+    max-width:360px; margin:0 auto;
+    box-shadow:0 10px 40px rgba(0,0,0,0.2);
+  }
+  .login-title { text-align:center; font-size:26px; font-weight:700; color:#1E3A5F; margin-bottom:4px; }
+  .login-sub { text-align:center; color:#666; font-size:14px; margin-bottom:24px; }
+  .login-box label {
+    display:block; font-weight:700; color:#1E3A5F;
+    margin:14px 0 6px; font-size:14px;
+  }
+  .login-box input {
+    width:100%; padding:12px 14px;
+    border:2px solid #e0e0e0; border-radius:10px;
+    font-size:15px; font-family:inherit;
+  }
+  .login-box input:focus { outline:none; border-color:#F4A261; }
+  .login-submit {
+    width:100%; margin-top:22px; padding:14px;
+    background:#F4A261; color:#fff; border:none;
+    border-radius:10px; font-size:16px; font-weight:700;
+    cursor:pointer; font-family:inherit;
+  }
+  .login-hint { text-align:center; color:#999; font-size:12px; margin-top:16px; line-height:1.5; }
+
+  .signup-divider {
+    text-align:center; color:#666; font-size:13px;
+    margin-top:20px; padding-top:16px; border-top:1px solid #f0f0f0;
+  }
+  .signup-btn {
+    width:100%; margin-top:10px; padding:12px;
+    background:#fff; color:#1E3A5F; border:2px solid #1E3A5F;
+    border-radius:10px; font-size:15px; font-weight:700;
+    cursor:pointer; font-family:inherit;
+    transition:all 0.2s;
+  }
+  .signup-btn:hover { background:#1E3A5F; color:#fff; }
+
+  .signup-back-btn {
+    width:100%; margin-top:10px; padding:12px;
+    background:#fff; color:#666; border:2px solid #e0e0e0;
+    border-radius:10px; font-size:15px; font-weight:700;
+    cursor:pointer; font-family:inherit;
+    transition:all 0.2s;
+  }
+  .signup-back-btn:hover { background:#F8F9FA; border-color:#999; color:#333; }
+
+  .form-error {
+    background:#ffe8e8; border:1px solid #e63946;
+    color:#c92a36; padding:10px 14px; border-radius:10px;
+    font-size:13px; margin-bottom:14px; text-align:center;
+    display:none;
+  }
+  .form-error.show { display:block; }
+
+  /* ===== زر تثبيت التطبيق ===== */
+  #installBanner {
+    display:none;
+    position:fixed; bottom:80px; left:12px; right:12px;
+    background:#1E3A5F; color:#fff; padding:14px 16px;
+    border-radius:14px; box-shadow:0 6px 24px rgba(0,0,0,0.25);
+    z-index:200; align-items:center; gap:12px;
+  }
+  #installBanner.show { display:flex; }
+  #installBanner .install-text { flex:1; font-size:13px; line-height:1.4; }
+  #installBanner .install-text strong { display:block; font-size:14px; margin-bottom:2px; }
+  #installBanner button {
+    background:#F4A261; color:#fff; border:none; padding:8px 16px;
+    border-radius:8px; font-size:13px; font-weight:700;
+    cursor:pointer; font-family:inherit;
+  }
+  #installBanner .install-close {
+    background:none; color:#fff; border:none; font-size:18px;
+    padding:0 4px; cursor:pointer; opacity:0.7;
+  }
+</style>
+</head>
+<body>
+
+<!-- ===== بانر تثبيت التطبيق ===== -->
+<div id="installBanner">
+  <div class="install-text">
+    <strong>ثبّت تطبيق معقب</strong>
+    أضف التطبيق إلى شاشتك الرئيسية
+  </div>
+  <button id="installBtn">تثبيت</button>
+  <button class="install-close" id="installClose">✕</button>
+</div>
+
+<div id="loginScreen" class="show">
+  <div class="login-box">
+    <h1 class="login-title">معقب</h1>
+    <p class="login-sub">تسجيل الدخول</p>
+    <div id="loginError" class="form-error"></div>
+    <label for="loginUser">اسم المستخدم أو البريد</label>
+    <input id="loginUser" type="text" placeholder="أدخل اسم المستخدم أو البريد...">
+    <label for="loginPass">كلمة المرور</label>
+    <input id="loginPass" type="password" placeholder="أدخل كلمة المرور...">
+    <button class="login-submit" onclick="doLogin()">دخول</button>
+    <div class="signup-divider">ليس لديك حساب؟</div>
+    <button class="signup-btn" onclick="openSignup()">إنشاء حساب</button>
+    <p class="login-hint">يجب إنشاء حساب أولاً لتتمكن من الدخول</p>
+  </div>
+</div>
+
+<div id="signupScreen">
+  <div class="login-box">
+    <h1 class="login-title">إنشاء حساب</h1>
+    <p class="login-sub">انضم إلى معقب</p>
+    <div id="signupError" class="form-error"></div>
+    <label for="suFirst">الاسم الأول</label>
+    <input id="suFirst" type="text" placeholder="الاسم الأول..." maxlength="30">
+    <label for="suLast">الاسم الثاني</label>
+    <input id="suLast" type="text" placeholder="الاسم الثاني..." maxlength="30">
+    <label for="suEmail">البريد الإلكتروني</label>
+    <input id="suEmail" type="email" placeholder="example@mail.com" maxlength="80">
+    <label for="suPass">كلمة المرور</label>
+    <input id="suPass" type="password" placeholder="6 أحرف على الأقل..." maxlength="50">
+    <label for="suPassConfirm">تأكيد كلمة المرور</label>
+    <input id="suPassConfirm" type="password" placeholder="أعد إدخال كلمة المرور..." maxlength="50">
+    <button class="login-submit" onclick="doSignup()">إنشاء حساب</button>
+    <div class="signup-divider">لديك حساب بالفعل؟</div>
+    <button class="signup-back-btn" onclick="openLogin()">تسجيل الدخول</button>
+  </div>
+</div>
+
+<div id="app" style="display:none;">
+  <header>
+    <h1>معقب</h1>
+    <button class="btn-add" onclick="showPage('composer')">+</button>
+  </header>
+
+  <main id="feed" class="show"></main>
+
+  <section id="composer">
+    <label for="postTitle">اسم المنشور</label>
+    <input id="postTitle" type="text" placeholder="اكتب اسم المنشور هنا..." maxlength="80">
+    <label for="postDetails">التفاصيل</label>
+    <textarea id="postDetails" placeholder="اكتب تفاصيل المنشور هنا..." maxlength="500"></textarea>
+    <div class="composer-actions">
+      <button class="btn-publish" onclick="publish()">نشر</button>
+    </div>
+  </section>
+
+  <section id="profile">
+    <div class="profile-head">
+      <div class="profile-avatar" id="meAvatarWrap">
+        <div class="inner" id="meAvatarInner"><span id="meAvatar">م</span></div>
+      </div>
+      <h2 class="profile-name" id="meNameWrap"><span id="meName">معقب</span></h2>
+      <p class="profile-bio" id="meBio">عقّب بأسلوبك ✍️</p>
+      <div class="profile-stats">
+        <div class="stat-box"><strong id="postCount">0</strong><small>منشورات</small></div>
+        <div class="stat-box"><strong id="myFollowers">0</strong><small>متابعين</small></div>
+      </div>
+      <div class="profile-actions">
+        <button class="edit-profile-btn" onclick="openEditProfile()">✏️ تعديل الملف الشخصي</button>
+        <button id="verifyBtn" class="verify-btn" onclick="openVerify()">توثيق الحساب</button>
+        <button class="logout-btn" onclick="doLogout()">تسجيل الخروج</button>
+      </div>
+    </div>
+    <h3 class="my-posts-title">📝 منشوراتي</h3>
+    <div id="myPostsList"><div class="empty-posts">لا توجد منشورات بعد</div></div>
+  </section>
+
+  <section id="userProfile">
+    <button class="back-btn" onclick="goBack()">→ رجوع</button>
+    <div class="profile-head">
+      <div class="profile-avatar" id="uAvatarWrap">
+        <div class="inner" id="uAvatarInner"><span id="uAvatar">؟</span></div>
+      </div>
+      <h2 class="profile-name" id="uNameWrap"><span id="uName">مستخدم</span></h2>
+      <p class="profile-bio" id="uBio">عقّب بأسلوبك ✍️</p>
+      <div class="profile-stats">
+        <div class="stat-box"><strong id="uPostCount">0</strong><small>منشورات</small></div>
+        <div class="stat-box"><strong id="uFollowers">0</strong><small>متابعين</small></div>
+      </div>
+      <div class="profile-actions">
+        <button id="followBtn" class="follow-btn follow" onclick="toggleFollow()">متابعة</button>
+      </div>
+    </div>
+    <h3 class="my-posts-title">📝 منشورات <span id="uNameInline"></span></h3>
+    <div id="userPostsList"><div class="empty-posts">لا توجد منشورات</div></div>
+  </section>
+
+  <section id="editProfilePage">
+    <button class="back-btn" onclick="showPage('profile', document.querySelectorAll('nav button')[2]); renderMyProfile();">→ رجوع</button>
+    <div class="edit-header">
+      <h2 class="edit-title">✏️ تعديل الملف الشخصي</h2>
+      <p class="edit-desc">عدّل صورتك واسمك ونبذتك التعريفية</p>
+    </div>
+    <div class="edit-avatar-wrap">
+      <div class="edit-avatar" id="editAvatar" onclick="openEditPhotoPicker()">
+        <span id="editAvatarContent">م</span>
+        <div class="edit-avatar-overlay">📷</div>
+      </div>
+      <div class="edit-avatar-camera">📷</div>
+      <input id="editPhotoInput" type="file" accept="image/*" style="display:none;" onchange="pickEditPhoto(event)">
+    </div>
+    <div class="edit-form">
+      <div class="form-group">
+        <label for="editName">الاسم</label>
+        <input id="editName" type="text" maxlength="30" placeholder="اسمك...">
+      </div>
+      <div class="form-group">
+        <label for="editBio">النبذة التعريفية</label>
+        <textarea id="editBio" maxlength="120" placeholder="اكتب نبذة عنك..."></textarea>
+      </div>
+      <button class="btn-save-profile" onclick="saveProfile()">💾 حفظ التعديلات</button>
+    </div>
+  </section>
+
+  <section id="verifyPage">
+    <button class="back-btn" onclick="showPage('profile', document.querySelectorAll('nav button')[2]); renderMyProfile();">→ رجوع</button>
+    <div class="verify-header">
+      <div class="verify-icon">✅</div>
+      <h2 class="verify-title">توثيق الحساب</h2>
+      <p class="verify-desc">وثّق حسابك للحصول على شارة توثيق زرقاء تُظهر أن حسابك موثّق.</p>
+    </div>
+    <div class="conditions-box">
+      <div class="conditions-title">📋 شروط التوثيق</div>
+      <div id="conditionsList"></div>
+    </div>
+    <div id="conditionsMessage"></div>
+    <div id="verifyContent" style="display:none;">
+      <div class="verify-form">
+        <div class="form-group">
+          <label for="vFullName">الاسم الكامل</label>
+          <input id="vFullName" type="text" placeholder="الاسم كما في الهوية...">
+        </div>
+        <div class="form-group">
+          <label for="vIdNumber">رقم الهوية / الإقامة</label>
+          <input id="vIdNumber" type="text" placeholder="أدخل رقم الهوية..." maxlength="20">
+        </div>
+        <div class="form-group">
+          <label>📷 صورة الهوية (الوجه والظهر)</label>
+          <div class="file-upload">
+            <input id="vIdFile" type="file" accept="image/*" onchange="fileChosen('vIdFile','vIdLabel')">
+            <label class="file-label" id="vIdLabel" for="vIdFile"><span>📎 اختر صورة الهوية</span></label>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>📷 صورة شخصية (سيلفي)</label>
+          <div class="file-upload">
+            <input id="vSelfieFile" type="file" accept="image/*" capture="user" onchange="fileChosen('vSelfieFile','vSelfieLabel')">
+            <label class="file-label" id="vSelfieLabel" for="vSelfieFile"><span>🤳 اختر صورة سيلفي</span></label>
+          </div>
+        </div>
+        <button class="btn-submit-verify" onclick="submitVerification()">إرسال طلب التوثيق</button>
+      </div>
+    </div>
+    <div id="pendingContent" class="pending-box" style="display:none;">
+      <div class="pending-icon">⏳</div>
+      <div class="pending-title">طلبك قيد المراجعة</div>
+      <p class="pending-desc">تم استلام مستنداتك بنجاح.<br>سيتم مراجعة طلبك خلال 24-48 ساعة.</p>
+      <button class="back-btn" style="margin-top:20px;" onclick="approveDemo()">(تجريبي) الموافقة الآن</button>
+    </div>
+  </section>
+
+  <nav>
+    <button class="active" onclick="showPage('feed', this)">
+      <span class="nav-icon">🏠</span>
+      <span class="nav-label">المنشورات</span>
+    </button>
+    <button onclick="showPage('composer', this)">
+      <span class="nav-icon">➕</span>
+      <span class="nav-label">منشور جديد</span>
+    </button>
+    <button onclick="showPage('profile', this)">
+      <span class="nav-icon">👤</span>
+      <span class="nav-label">ملفي</span>
+    </button>
+  </nav>
+</div>
+
+<script>
+  const MIN_FOLLOWERS_FOR_VERIFY = 100;
+
+  function verifiedBadgeSVG(size = 18) {
+    return `<span class="verified-badge" style="width:${size}px;height:${size}px;" title="حساب موثّق">
+      <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+        <path fill="#1DA1F2" d="M22.5 12.5c0-1.58-.875-2.95-2.148-3.6.154-.435.238-.905.238-1.4 0-2.21-1.71-3.998-3.918-3.998-.47 0-.92.084-1.336.25C14.818 2.415 13.51 1.5 12 1.5s-2.816.917-3.337 2.25c-.416-.165-.866-.25-1.336-.25-2.21 0-3.918 1.79-3.918 4 0 .495.084.965.238 1.4-1.273.65-2.148 2.02-2.148 3.6 0 1.46.745 2.735 1.865 3.42-.035.19-.053.39-.053.59 0 2.21 1.71 4 3.918 4 .47 0 .92-.086 1.336-.25.52 1.333 1.828 2.25 3.337 2.25s2.816-.917 3.337-2.25c.416.165.866.25 1.336.25 2.21 0 3.918-1.79 3.918-4 0-.2-.018-.4-.053-.59 1.12-.685 1.865-1.96 1.865-3.42z"/>
+        <path fill="#fff" d="M10.586 16.5l-3.293-3.293 1.414-1.414 1.879 1.879 5.293-5.293 1.414 1.414z"/>
+      </svg>
+    </span>`;
+  }
+
+  const users = {
+    me:   { id:'me',   name:'معقب', avatar:'م', photo:null, bio:'عقّب بأسلوبك ✍️', isMe:true, verified:false },
+    ahmed:{ id:'ahmed',name:'أحمد', avatar:'أ', photo:null, bio:'مطوّر ومهتم بالتقنية', isMe:false, verified:true },
+    sara: { id:'sara', name:'سارة', avatar:'س', photo:null, bio:'مصممة جرافيك 🎨', isMe:false, verified:false }
+  };
+
+  let posts = [];
+  let followers = { me: 0, ahmed: 12, sara: 8 };
+  let following = new Set();
+  let lastPage = 'feed';
+  let currentUserId = null;
+  let editPhotoTemp = null;
+  let currentUserKey = null;
+
+  const SESSION_KEY = 'maqab_session';
+  const ACCOUNTS_KEY = 'maqab_accounts';
+  const POSTS_KEY = 'maqab_posts';
+  const INTERACTIONS_KEY = 'maqab_interactions';
+
+  function defaultPosts() { return []; }
+
+  function savePosts() {
+    try { localStorage.setItem(POSTS_KEY, JSON.stringify(posts)); } catch(e) {}
+  }
+  function loadPosts() {
+    try {
+      const raw = localStorage.getItem(POSTS_KEY);
+      if (!raw) { posts = defaultPosts(); savePosts(); return; }
+      posts = JSON.parse(raw);
+      if (!Array.isArray(posts)) posts = defaultPosts();
+    } catch(e) { posts = defaultPosts(); }
+  }
+
+  function loadInteractions() {
+    try { return JSON.parse(localStorage.getItem(INTERACTIONS_KEY) || '{}'); } catch(e) { return {}; }
+  }
+  function saveInteractions(data) {
+    try { localStorage.setItem(INTERACTIONS_KEY, JSON.stringify(data)); } catch(e) {}
+  }
+  function getMyInteractions() {
+    const all = loadInteractions();
+    if (!currentUserKey) return { likes:[], retweets:[], views:[] };
+    if (!all[currentUserKey]) all[currentUserKey] = { likes:[], retweets:[], views:[] };
+    return all[currentUserKey];
+  }
+  function updateMyInteractions(fn) {
+    if (!currentUserKey) return;
+    const all = loadInteractions();
+    if (!all[currentUserKey]) all[currentUserKey] = { likes:[], retweets:[], views:[] };
+    fn(all[currentUserKey]);
+    saveInteractions(all);
+  }
+
+  function loadAccounts() {
+    try { return JSON.parse(localStorage.getItem(ACCOUNTS_KEY) || '[]'); } catch(e) { return []; }
+  }
+  function saveAccounts(accounts) {
+    try { localStorage.setItem(ACCOUNTS_KEY, JSON.stringify(accounts)); } catch(e) {}
+  }
+  function findAccount(identifier) {
+    const accounts = loadAccounts();
+    const id = (identifier || '').trim().toLowerCase();
+    return accounts.find(a => a.email.toLowerCase() === id || a.username.toLowerCase() === id);
+  }
+
+  function saveSession() {
+    const session = {
+      loggedIn: true,
+      userKey: currentUserKey,
+      me: {
+        name: users.me.name, avatar: users.me.avatar,
+        photo: users.me.photo, bio: users.me.bio,
+        verified: users.me.verified, followers: followers.me
+      }
+    };
+    try { localStorage.setItem(SESSION_KEY, JSON.stringify(session)); } catch(e) {}
+  }
+  function loadSession() {
+    try {
+      const raw = localStorage.getItem(SESSION_KEY);
+      if (!raw) return false;
+      const session = JSON.parse(raw);
+      if (!session || !session.loggedIn) return false;
+      users.me.name = session.me.name || 'معقب';
+      users.me.avatar = session.me.avatar || 'م';
+      users.me.photo = session.me.photo || null;
+      users.me.bio = session.me.bio || 'عقّب بأسلوبك ✍️';
+      users.me.verified = !!session.me.verified;
+      if (typeof session.me.followers === 'number') followers.me = session.me.followers;
+      currentUserKey = session.userKey || null;
+      return true;
+    } catch(e) { return false; }
+  }
+  function clearSession() {
+    try { localStorage.removeItem(SESSION_KEY); } catch(e) {}
+  }
+
+  function openSignup() {
+    document.getElementById('loginScreen').classList.remove('show');
+    document.getElementById('signupScreen').classList.add('show');
+    document.getElementById('signupError').classList.remove('show');
+    ['suFirst','suLast','suEmail','suPass','suPassConfirm'].forEach(id => document.getElementById(id).value = '');
+  }
+  function openLogin() {
+    document.getElementById('signupScreen').classList.remove('show');
+    document.getElementById('loginScreen').classList.add('show');
+    document.getElementById('loginError').classList.remove('show');
+  }
+  function showError(elementId, message) {
+    const el = document.getElementById(elementId);
+    el.textContent = message;
+    el.classList.add('show');
+  }
+
+  function doSignup() {
+    const first = document.getElementById('suFirst').value.trim();
+    const last = document.getElementById('suLast').value.trim();
+    const email = document.getElementById('suEmail').value.trim();
+    const pass = document.getElementById('suPass').value;
+    const passConfirm = document.getElementById('suPassConfirm').value;
+    document.getElementById('signupError').classList.remove('show');
+
+    if (!first) return showError('signupError', 'أدخل الاسم الأول!');
+    if (!last) return showError('signupError', 'أدخل الاسم الثاني!');
+    if (!email) return showError('signupError', 'أدخل البريد الإلكتروني!');
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return showError('signupError', 'البريد الإلكتروني غير صالح!');
+    if (!pass) return showError('signupError', 'أدخل كلمة المرور!');
+    if (pass.length < 6) return showError('signupError', 'كلمة المرور 6 أحرف على الأقل!');
+    if (pass !== passConfirm) return showError('signupError', 'كلمتا المرور غير متطابقتين!');
+
+    const accounts = loadAccounts();
+    if (accounts.some(a => a.email.toLowerCase() === email.toLowerCase())) {
+      return showError('signupError', 'هذا البريد مسجّل مسبقاً!');
+    }
+
+    const fullName = `${first} ${last}`;
+    const username = first + last;
+    const account = { firstName:first, lastName:last, fullName, username, email, password:pass, createdAt:Date.now() };
+    accounts.push(account);
+    saveAccounts(accounts);
+
+    currentUserKey = email.toLowerCase();
+    users.me.name = fullName;
+    users.me.avatar = first.charAt(0);
+    users.me.bio = 'عقّب بأسلوبك ✍️';
+    users.me.photo = null;
+    users.me.verified = false;
+    followers.me = 0;
+    saveSession();
+
+    alert(`🎉 مرحباً ${fullName}!\nتم إنشاء حسابك بنجاح.`);
+    enterApp();
+  }
+
+  function doLogin() {
+    const identifier = document.getElementById('loginUser').value.trim();
+    const pass = document.getElementById('loginPass').value;
+    document.getElementById('loginError').classList.remove('show');
+
+    if (!identifier) return showError('loginError', 'أدخل اسم المستخدم أو البريد!');
+    if (!pass) return showError('loginError', 'أدخل كلمة المرور!');
+
+    const account = findAccount(identifier);
+    if (!account) return showError('loginError', 'لا يوجد حساب بهذا الاسم أو البريد. يرجى إنشاء حساب أولاً.');
+    if (account.password !== pass) return showError('loginError', 'كلمة المرور غير صحيحة!');
+
+    currentUserKey = account.email.toLowerCase();
+    users.me.name = account.fullName || account.username;
+    users.me.avatar = (account.firstName || account.username).charAt(0);
+    users.me.bio = 'عقّب بأسلوبك ✍️';
+    users.me.photo = null;
+    users.me.verified = false;
+    followers.me = 0;
+
+    saveSession();
+    enterApp();
+  }
+
+  function enterApp() {
+    document.getElementById('loginScreen').classList.remove('show');
+    document.getElementById('signupScreen').classList.remove('show');
+    document.getElementById('app').style.display = 'block';
+    loadPosts();
+    renderFeed();
+    showPage('feed', document.querySelectorAll('nav button')[0]);
+  }
+
+  function doLogout() {
+    if (!confirm('هل تريد تسجيل الخروج؟')) return;
+    clearSession();
+    currentUserKey = null;
+    document.getElementById('loginUser').value = '';
+    document.getElementById('loginPass').value = '';
+    document.getElementById('loginError').classList.remove('show');
+    document.getElementById('app').style.display = 'none';
+    document.getElementById('signupScreen').classList.remove('show');
+    document.getElementById('loginScreen').classList.add('show');
+    ['feed','composer','profile','userProfile','verifyPage','editProfilePage'].forEach(id =>
+      document.getElementById(id).classList.remove('show')
+    );
+    document.getElementById('feed').classList.add('show');
+    document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('nav button')[0].classList.add('active');
+    currentUserId = null; lastPage = 'feed';
+    document.body.classList.remove('keyboard-open');
+  }
+
+  function deletePost(postId) {
+    if (!users.me.verified) return alert('⚠️ حذف المنشورات متاح للموثقين فقط.');
+    const post = posts.find(p => p.id === postId);
+    if (!post) return;
+    if (post.userId !== 'me') return alert('لا يمكنك حذف منشور ليس لك.');
+    if (!confirm('هل تريد حذف هذا المنشور نهائياً؟')) return;
+    posts = posts.filter(p => p.id !== postId);
+    savePosts();
+    renderFeed();
+    renderMyProfile();
+    alert('✅ تم حذف المنشور.');
+  }
+
+  function openEditPost(postId) {
+    if (!users.me.verified) return alert('⚠️ تعديل المنشورات متاح للموثقين فقط.');
+    const post = posts.find(p => p.id === postId);
+    if (!post) return;
+    if (post.userId !== 'me') return alert('لا يمكنك تعديل منشور ليس لك.');
+
+    const newTitle = prompt('اسم المنشور الجديد:', post.title);
+    if (newTitle === null) return;
+    if (!newTitle.trim()) return alert('الاسم لا يمكن أن يكون فارغاً!');
+    const newDetails = prompt('التفاصيل الجديدة:', post.details);
+    if (newDetails === null) return;
+    if (!newDetails.trim()) return alert('التفاصيل لا يمكن أن تكون فارغة!');
+
+    post.title = newTitle.trim();
+    post.details = newDetails.trim();
+    savePosts();
+    renderFeed();
+    renderMyProfile();
+    alert('✅ تم تعديل المنشور.');
+  }
+
+  function registerView(postId) {
+    if (!currentUserKey) return;
+    const inter = getMyInteractions();
+    if (inter.views.includes(postId)) return;
+    const post = posts.find(p => p.id === postId);
+    if (!post) return;
+    post.views = (post.views || 0) + 1;
+    updateMyInteractions(i => { if (!i.views.includes(postId)) i.views.push(postId); });
+    savePosts();
+  }
+
+  function toggleLike(postId) {
+    if (!currentUserKey) return;
+    const post = posts.find(p => p.id === postId);
+    if (!post) return;
+    const inter = getMyInteractions();
+    const liked = inter.likes.includes(postId);
+    if (liked) {
+      post.likes = Math.max(0, (post.likes || 0) - 1);
+      updateMyInteractions(i => { i.likes = i.likes.filter(x => x !== postId); });
+    } else {
+      post.likes = (post.likes || 0) + 1;
+      updateMyInteractions(i => { if (!i.likes.includes(postId)) i.likes.push(postId); });
+    }
+    savePosts();
+    renderFeed();
+    renderMyProfile();
+  }
+
+  function toggleRetweet(postId) {
+    if (!currentUserKey) return;
+    const post = posts.find(p => p.id === postId);
+    if (!post) return;
+    const inter = getMyInteractions();
+    const rt = inter.retweets.includes(postId);
+
+    if (rt) {
+      post.retweets = Math.max(0, (post.retweets || 0) - 1);
+      updateMyInteractions(i => { i.retweets = i.retweets.filter(x => x !== postId); });
+      posts = posts.filter(p => !(p.userId === 'me' && p.retweetOf === postId));
+    } else {
+      post.retweets = (post.retweets || 0) + 1;
+      updateMyInteractions(i => { if (!i.retweets.includes(postId)) i.retweets.push(postId); });
+      const originalAuthor = users[post.userId];
+      posts.unshift({
+        id: Date.now(),
+        userId: 'me',
+        title: post.title,
+        details: post.details,
+        views: 0, likes: 0, retweets: 0,
+        comments: [],
+        retweetOf: postId,
+        retweetOfAuthor: originalAuthor ? originalAuthor.name : 'مستخدم'
+      });
+    }
+    savePosts();
+    renderFeed();
+    renderMyProfile();
+  }
+
+  function addFakeFollowers() { followers.me += 50; saveSession(); renderVerifyConditions(); }
+
+  function openVerify() {
+    ['feed','composer','profile','userProfile','verifyPage','editProfilePage'].forEach(id =>
+      document.getElementById(id).classList.remove('show')
+    );
+    document.getElementById('verifyPage').classList.add('show');
+    document.getElementById('pendingContent').style.display = 'none';
+    document.querySelector('.conditions-box').style.display = 'block';
+    document.getElementById('conditionsMessage').style.display = 'block';
+    document.getElementById('vFullName').value = '';
+    document.getElementById('vIdNumber').value = '';
+    document.getElementById('vIdFile').value = '';
+    document.getElementById('vSelfieFile').value = '';
+    resetFileLabel('vIdLabel', '📎 اختر صورة الهوية');
+    resetFileLabel('vSelfieLabel', '🤳 اختر صورة سيلفي');
+    renderVerifyConditions();
+    document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
+  }
+
+  function renderVerifyConditions() {
+    const myPostsCount = posts.filter(p => p.userId === 'me').length;
+    if (users.me.verified) {
+      document.getElementById('conditionsList').innerHTML = `
+        <div class="condition-item">
+          <div class="condition-icon pass">✓</div>
+          <div class="condition-text"><strong>حسابك موثّق بالفعل</strong><div class="condition-detail">تم توثيق حسابك مسبقاً</div></div>
+        </div>`;
+      document.getElementById('conditionsMessage').innerHTML = `<div class="conditions-pass-msg">✅ حسابك موثّق — لا حاجة لإعادة التوثيق</div>`;
+      document.getElementById('verifyContent').style.display = 'none';
+      return;
+    }
+    const conditions = [
+      { label:'لديك 100 متابع على الأقل', detail:`لديك ${followers.me} متابع`, pass: followers.me >= MIN_FOLLOWERS_FOR_VERIFY },
+      { label:'حساب نشط (منشور واحد على الأقل)', detail: myPostsCount === 0 ? 'لا توجد منشورات' : `${myPostsCount} منشور`, pass: myPostsCount >= 1 },
+      { label:'الحساب غير موثّق حالياً', detail:'غير موثّق', pass: !users.me.verified }
+    ];
+    document.getElementById('conditionsList').innerHTML = conditions.map(c => `
+      <div class="condition-item">
+        <div class="condition-icon ${c.pass?'pass':'fail'}">${c.pass?'✓':'✗'}</div>
+        <div class="condition-text"><strong>${c.label}</strong><div class="condition-detail">${c.detail}</div></div>
+      </div>`).join('');
+    const allPass = conditions.every(c => c.pass);
+    const failed = conditions.filter(c => !c.pass);
+    if (allPass) {
+      document.getElementById('conditionsMessage').innerHTML = `<div class="conditions-pass-msg">✅ استوفيت جميع الشروط — يمكنك إرسال الطلب الآن</div>`;
+      document.getElementById('verifyContent').style.display = 'block';
+    } else {
+      document.getElementById('conditionsMessage').innerHTML = `
+        <div class="conditions-fail-msg">
+          ⚠️ يجب استيفاء جميع الشروط أولاً (${failed.length} شرط متبقٍ)
+          <br><br>
+          <button onclick="addFakeFollowers()" style="background:#1DA1F2;color:#fff;border:none;padding:8px 20px;border-radius:8px;font-size:13px;cursor:pointer;font-family:inherit;">🧪 (تجريبي) +50 متابع</button>
+        </div>`;
+      document.getElementById('verifyContent').style.display = 'none';
+    }
+  }
+
+  function resetFileLabel(labelId, defaultText) {
+    const label = document.getElementById(labelId);
+    label.classList.remove('has-file');
+    label.innerHTML = `<span>${defaultText}</span>`;
+  }
+  function fileChosen(inputId, labelId) {
+    const input = document.getElementById(inputId);
+    const label = document.getElementById(labelId);
+    if (input.files.length > 0) {
+      label.classList.add('has-file');
+      label.innerHTML = `<span>✅ ${input.files[0].name}</span>`;
+    }
+  }
+  function submitVerification() {
+    const myPostsCount = posts.filter(p => p.userId === 'me').length;
+    if (followers.me < MIN_FOLLOWERS_FOR_VERIFY || myPostsCount < 1) return alert('⚠️ لا يمكنك إرسال الطلب — استوفِ الشروط أولاً.');
+    const fullName = document.getElementById('vFullName').value.trim();
+    const idNumber = document.getElementById('vIdNumber').value.trim();
+    const idFile = document.getElementById('vIdFile').files.length;
+    const selfieFile = document.getElementById('vSelfieFile').files.length;
+    if (!fullName) return alert('أدخل الاسم الكامل!');
+    if (!idNumber) return alert('أدخل رقم الهوية!');
+    if (idFile === 0) return alert('ارفع صورة الهوية!');
+    if (selfieFile === 0) return alert('ارفع صورة سيلفي!');
+    document.getElementById('verifyContent').style.display = 'none';
+    document.getElementById('conditionsMessage').style.display = 'none';
+    document.querySelector('.conditions-box').style.display = 'none';
+    document.getElementById('pendingContent').style.display = 'block';
+  }
+  function approveDemo() {
+    users.me.verified = true;
+    saveSession();
+    alert('🎉 تم توثيق حسابك بنجاح!\n\nالآن يمكنك تعديل وحذف منشوراتك من صفحة ملفك الشخصي.');
+    document.querySelector('.conditions-box').style.display = 'block';
+    document.getElementById('conditionsMessage').style.display = 'block';
+    showPage('profile', document.querySelectorAll('nav button')[2]);
+    renderMyProfile();
+    renderFeed();
+  }
+
+  function openEditProfile() {
+    ['feed','composer','profile','userProfile','verifyPage','editProfilePage'].forEach(id =>
+      document.getElementById(id).classList.remove('show')
+    );
+    document.getElementById('editProfilePage').classList.add('show');
+    document.getElementById('editName').value = users.me.name;
+    document.getElementById('editBio').value = users.me.bio;
+    editPhotoTemp = users.me.photo;
+    renderEditAvatar();
+    document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
+    lastPage = 'profile';
+  }
+  function renderEditAvatar() {
+    const el = document.getElementById('editAvatarContent');
+    const photo = editPhotoTemp !== null ? editPhotoTemp : users.me.photo;
+    if (photo) el.innerHTML = `<img src="${photo}" alt="صورتي">`;
+    else el.textContent = users.me.avatar;
+  }
+  function openEditPhotoPicker() { document.getElementById('editPhotoInput').click(); }
+  function pickEditPhoto(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    if (!file.type.startsWith('image/')) return alert('الرجاء اختيار صورة صحيحة!');
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      resizeImage(e.target.result, 400, (resized) => { editPhotoTemp = resized; renderEditAvatar(); });
+    };
+    reader.readAsDataURL(file);
+  }
+  function resizeImage(dataUrl, maxSize, callback) {
+    const img = new Image();
+    img.onload = () => {
+      let w = img.width, h = img.height;
+      if (w > maxSize || h > maxSize) {
+        if (w > h) { h = Math.round(h * maxSize / w); w = maxSize; }
+        else { w = Math.round(w * maxSize / h); h = maxSize; }
+      }
+      const canvas = document.createElement('canvas');
+      canvas.width = w; canvas.height = h;
+      canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+      callback(canvas.toDataURL('image/jpeg', 0.8));
+    };
+    img.src = dataUrl;
+  }
+  function saveProfile() {
+    const newName = document.getElementById('editName').value.trim();
+    const newBio = document.getElementById('editBio').value.trim();
+    if (!newName) return alert('الاسم لا يمكن أن يكون فارغاً!');
+    users.me.name = newName;
+    users.me.avatar = newName.charAt(0);
+    users.me.bio = newBio || 'عقّب بأسلوبك ✍️';
+    users.me.photo = editPhotoTemp;
+    saveSession();
+    renderFeed();
+    alert('✅ تم حفظ التعديلات بنجاح!');
+    showPage('profile', document.querySelectorAll('nav button')[2]);
+    renderMyProfile();
+  }
+
+  function showPage(pageId, btn) {
+    ['feed','composer','profile','userProfile','verifyPage','editProfilePage'].forEach(id =>
+      document.getElementById(id).classList.remove('show')
+    );
+    document.getElementById(pageId).classList.add('show');
+    document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
+    if (btn) btn.classList.add('active');
+    if (pageId === 'composer') setTimeout(() => document.getElementById('postTitle').focus(), 50);
+    if (pageId === 'profile') renderMyProfile();
+    if (pageId !== 'userProfile') lastPage = pageId;
+    setTimeout(setupKeyboardHandler, 100);
+  }
+
+  function openUserProfile(userId) {
+    const user = users[userId];
+    if (!user) return;
+    if (user.isMe) {
+      showPage('profile', document.querySelectorAll('nav button')[2]);
+      renderMyProfile();
+      return;
+    }
+    currentUserId = userId;
+    ['feed','composer','profile','userProfile','verifyPage','editProfilePage'].forEach(id =>
+      document.getElementById(id).classList.remove('show')
+    );
+    document.getElementById('userProfile').classList.add('show');
+
+    const uInner = document.getElementById('uAvatarInner');
+    uInner.innerHTML = user.photo ? `<img src="${user.photo}" alt="${user.name}">` : `<span id="uAvatar">${user.avatar}</span>`;
+
+    document.getElementById('uName').textContent = user.name;
+    document.getElementById('uBio').textContent = user.bio;
+    document.getElementById('uNameInline').textContent = user.name;
+    updateVerifiedBadge('uAvatarWrap', 'uNameWrap', user.verified);
+
+    const userPosts = posts.filter(p => p.userId === userId);
+    document.getElementById('uPostCount').textContent = userPosts.length;
+    const list = document.getElementById('userPostsList');
+    list.innerHTML = userPosts.length === 0
+      ? '<div class="empty-posts">لا توجد منشورات</div>'
+      : userPosts.map(p => `
+          <div class="my-post">
+            <div class="my-post-title">${escapeHtml(p.title)}</div>
+            <div class="my-post-body">${escapeHtml(p.details)}</div>
+          </div>`).join('');
+
+    updateFollowUI();
+    document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
+  }
+
+  function updateVerifiedBadge(avatarWrapId, nameWrapId, isVerified) {
+    const avatarWrap = document.getElementById(avatarWrapId);
+    const nameWrap = document.getElementById(nameWrapId);
+    avatarWrap.querySelectorAll('.verified-badge').forEach(b => b.remove());
+    nameWrap.querySelectorAll('.verified-badge').forEach(b => b.remove());
+    if (isVerified) {
+      const nBadgeWrap = document.createElement('span');
+      nBadgeWrap.innerHTML = verifiedBadgeSVG(20);
+      const nBadge = nBadgeWrap.firstElementChild;
+      nBadge.style.display = 'inline-flex';
+      nBadge.style.flexShrink = '0';
+      nameWrap.appendChild(nBadge);
+    }
+  }
+
+  function updateFollowUI() {
+    if (!currentUserId) return;
+    document.getElementById('uFollowers').textContent = followers[currentUserId];
+    const btn = document.getElementById('followBtn');
+    if (following.has(currentUserId)) {
+      btn.className = 'follow-btn following';
+      btn.innerHTML = 'إلغاء المتابعة';
+    } else {
+      btn.className = 'follow-btn follow';
+      btn.innerHTML = 'متابعة';
+    }
+  }
+  function toggleFollow() {
+    if (!currentUserId) return;
+    if (following.has(currentUserId)) {
+      following.delete(currentUserId);
+      followers[currentUserId] = Math.max(0, followers[currentUserId] - 1);
+    } else {
+      following.add(currentUserId);
+      followers[currentUserId] += 1;
+    }
+    updateFollowUI();
+  }
+  function goBack() { currentUserId = null; showPage(lastPage || 'feed', null); }
+
+  function renderFeed() {
+    const inter = getMyInteractions();
+    const feed = document.getElementById('feed');
+    if (posts.length === 0) {
+      feed.innerHTML = '<div class="empty-posts" style="padding:60px 20px;font-size:15px;">لا توجد منشورات بعد — ابدأ بنشر أول منشور!</div>';
+      return;
+    }
+    feed.innerHTML = posts.map(p => {
+      const u = users[p.userId];
+      const badge = u.verified ? verifiedBadgeSVG(18) : '';
+      const liked = inter.likes.includes(p.id);
+      const retweeted = inter.retweets.includes(p.id);
+      const retweetLabel = p.retweetOf
+        ? `<div style="color:#2e8b57;font-size:12px;font-weight:700;margin-bottom:8px;">🔄 أعدت نشر منشور ${escapeHtml(p.retweetOfAuthor || 'مستخدم')}</div>`
+        : '';
+      return `
+        <div class="post" id="post-${p.id}">
+          ${retweetLabel}
+          <div class="post-head" onclick="openUserProfile('${u.id}')" title="عرض ملف ${u.name}">
+            ${avatarHTML(u)}
+            <strong>${u.name} ${badge}</strong>
+          </div>
+          <div class="post-title">${escapeHtml(p.title)}</div>
+          <p class="post-body">${escapeHtml(p.details)}</p>
+          <div class="post-actions">
+            <span class="${liked?'liked':''}" onclick="toggleLike(${p.id})">❤️ ${p.likes||0}</span>
+            <span onclick="toggleComments(${p.id})">💬 ${p.comments.length}</span>
+            <span class="${retweeted?'retweeted':''}" onclick="toggleRetweet(${p.id})">🔄 ${p.retweets||0}</span>
+            <span>👁️ ${p.views||0}</span>
+          </div>
+          <div class="comments-section" id="comments-${p.id}">
+            <div class="comments-list">${renderComments(p.comments)}</div>
+            <div class="comment-form">
+              <input type="text" placeholder="اكتب تعليقاً..." onkeydown="if(event.key==='Enter') addComment(${p.id}, this)">
+              <button onclick="addComment(${p.id}, this.previousElementSibling)">نشر</button>
+            </div>
+          </div>
+        </div>`;
+    }).join('');
+    setTimeout(setupKeyboardHandler, 50);
+  }
+
+  function renderComments(comments) {
+    if (comments.length === 0) return '<div class="no-comments">لا توجد تعليقات بعد — كن أول من يعلّق!</div>';
+    return comments.map(c => {
+      const u = users[c.userId] || users.me;
+      const badge = u.verified ? verifiedBadgeSVG(14) : '';
+      return `
+        <div class="comment-item">
+          ${avatarHTML(u, 'sm')}
+          <div class="comment-body">
+            <div class="comment-author">${u.name} ${badge}</div>
+            <div class="comment-text">${escapeHtml(c.text)}</div>
+          </div>
+        </div>`;
+    }).join('');
+  }
+
+  function toggleComments(postId) {
+    const section = document.getElementById(`comments-${postId}`);
+    const isOpening = !section.classList.contains('open');
+    if (isOpening) {
+      registerView(postId);
+      const post = posts.find(p => p.id === postId);
+      const actions = section.closest('.post').querySelector('.post-actions');
+      const viewsSpan = actions.querySelectorAll('span')[3];
+      if (viewsSpan && post) viewsSpan.textContent = `👁️ ${post.views}`;
+    }
+    section.classList.toggle('open');
+    if (isOpening) {
+      const input = section.querySelector('input');
+      if (input) setTimeout(() => input.focus(), 50);
+    }
+  }
+
+  function addComment(postId, inputEl) {
+    const text = inputEl.value.trim();
+    if (!text) return;
+    const post = posts.find(p => p.id === postId);
+    if (!post) return;
+    post.comments.push({ userId: 'me', text });
+    inputEl.value = '';
+    savePosts();
+    const section = document.getElementById(`comments-${postId}`);
+    section.querySelector('.comments-list').innerHTML = renderComments(post.comments);
+    const actions = section.closest('.post').querySelector('.post-actions');
+    const commentSpan = actions.querySelectorAll('span')[1];
+    if (commentSpan) commentSpan.textContent = `💬 ${post.comments.length}`;
+  }
+
+  function avatarHTML(user, cls = '') {
+    if (user.photo) return `<div class="avatar ${cls}"><img src="${user.photo}" alt="${user.name}"></div>`;
+    return `<div class="avatar ${cls}">${user.avatar}</div>`;
+  }
+
+  function renderMyProfile() {
+    const inner = document.getElementById('meAvatarInner');
+    inner.innerHTML = users.me.photo ? `<img src="${users.me.photo}" alt="صورتي">` : `<span id="meAvatar">${users.me.avatar}</span>`;
+
+    document.getElementById('meName').textContent = users.me.name;
+    document.getElementById('meBio').textContent = users.me.bio;
+    updateVerifiedBadge('meAvatarWrap', 'meNameWrap', users.me.verified);
+
+    const verifyBtn = document.getElementById('verifyBtn');
+    if (users.me.verified) {
+      verifyBtn.className = 'verify-btn verified';
+      verifyBtn.innerHTML = 'حساب موثّق';
+      verifyBtn.onclick = null;
+    } else {
+      verifyBtn.className = 'verify-btn';
+      verifyBtn.innerHTML = 'توثيق الحساب';
+      verifyBtn.onclick = openVerify;
+    }
+
+    const myPosts = posts.filter(p => p.userId === 'me');
+    document.getElementById('postCount').textContent = myPosts.length;
+    document.getElementById('myFollowers').textContent = followers.me;
+
+    const list = document.getElementById('myPostsList');
+    if (myPosts.length === 0) {
+      list.innerHTML = '<div class="empty-posts">لا توجد منشورات بعد</div>';
+    } else {
+      list.innerHTML = myPosts.map(p => {
+        const isRetweet = !!p.retweetOf;
+        const actions = (users.me.verified && !isRetweet) ? `
+          <div class="my-post-actions">
+            <button class="btn-edit-post" onclick="openEditPost(${p.id})">✏️ تعديل</button>
+            <button class="btn-delete-post" onclick="deletePost(${p.id})">🗑️ حذف</button>
+          </div>` : '';
+        const rtLabel = isRetweet ? `<div style="color:#2e8b57;font-size:11px;font-weight:700;margin-bottom:4px;">🔄 أعدت نشر منشور ${escapeHtml(p.retweetOfAuthor || 'مستخدم')}</div>` : '';
+        return `
+          <div class="my-post">
+            ${rtLabel}
+            <div class="my-post-title">${escapeHtml(p.title)}</div>
+            <div class="my-post-body">${escapeHtml(p.details)}</div>
+            <div class="my-post-stats">
+              ❤️ ${p.likes||0} · 💬 ${p.comments.length} · 🔄 ${p.retweets||0} · 👁️ ${p.views||0}
+            </div>
+            ${actions}
+          </div>`;
+      }).join('');
+    }
+  }
+
+  function publish() {
+    const title = document.getElementById('postTitle').value.trim();
+    const details = document.getElementById('postDetails').value.trim();
+    if (!title) return alert('اكتب اسم المنشور أولاً!');
+    if (!details) return alert('اكتب تفاصيل المنشور!');
+    posts.unshift({
+      id: Date.now(), userId: 'me',
+      title, details,
+      views: 0, likes: 0, retweets: 0,
+      comments: []
+    });
+    savePosts();
+    document.getElementById('postTitle').value = '';
+    document.getElementById('postDetails').value = '';
+    renderFeed();
+    showPage('feed', document.querySelectorAll('nav button')[0]);
+  }
+
+  function escapeHtml(str) {
+    return str.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+
+  function setupKeyboardHandler() {
+    document.querySelectorAll('input, textarea').forEach(input => {
+      if (input.dataset.kbBound) return;
+      input.dataset.kbBound = '1';
+      input.addEventListener('focus', () => {
+        document.body.classList.add('keyboard-open');
+        setTimeout(() => { try { input.scrollIntoView({ behavior:'smooth', block:'center' }); } catch(e){} }, 300);
+      });
+      input.addEventListener('blur', () => document.body.classList.remove('keyboard-open'));
+    });
+  }
+
+  // ===== PWA: تثبيت التطبيق =====
+  let deferredPrompt = null;
+  const installBanner = document.getElementById('installBanner');
+  const installBtn = document.getElementById('installBtn');
+  const installClose = document.getElementById('installClose');
+
+  window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferredPrompt = e;
+    // أظهر البانر فقط إذا لم يثبّت التطبيق سابقاً
+    if (!localStorage.getItem('maqab_install_dismissed')) {
+      installBanner.classList.add('show');
+    }
+  });
+
+  installBtn.addEventListener('click', async () => {
+    if (!deferredPrompt) {
+      alert('التثبيت غير متاح الآن. جرّب من قائمة المتصفح: "تثبيت التطبيق" أو "إضافة إلى الشاشة الرئيسية".');
+      return;
+    }
+    deferredPrompt.prompt();
+    const { outcome } = await deferredPrompt.userChoice;
+    if (outcome === 'accepted') {
+      installBanner.classList.remove('show');
+    }
+    deferredPrompt = null;
+  });
+
+  installClose.addEventListener('click', () => {
+    installBanner.classList.remove('show');
+    localStorage.setItem('maqab_install_dismissed', '1');
+  });
+
+  window.addEventListener('appinstalled', () => {
+    installBanner.classList.remove('show');
+    console.log('✅ تم تثبيت التطبيق');
+  });
+
+  // تسجيل Service Worker
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('sw.js')
+        .then((reg) => console.log('✅ Service Worker جاهز:', reg.scope))
+        .catch((err) => console.warn('⚠️ فشل تسجيل Service Worker:', err));
+    });
+  }
+
+  window.addEventListener('DOMContentLoaded', () => {
+    if (loadSession()) { enterApp(); }
+    else { document.getElementById('loginScreen').classList.add('show'); }
+    setupKeyboardHandler();
+  });
+</script>
+</body>
+</html>
