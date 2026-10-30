@@ -13,6 +13,10 @@
 <meta name="apple-mobile-web-app-title" content="معقب">
 <meta name="mobile-web-app-capable" content="yes">
 
+<!-- أيقونة للمتصفح (PNG) -->
+<link rel="icon" type="image/png" href="https://upload.wikimedia.org/wikipedia/commons/thumb/8/85/Smiley.svg/192px-Smiley.svg.png">
+<link rel="apple-touch-icon" href="https://upload.wikimedia.org/wikipedia/commons/thumb/8/85/Smiley.svg/192px-Smiley.svg.png">
+
 <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700&display=swap" rel="stylesheet">
 <style>
   * { margin:0; padding:0; box-sizing:border-box; font-family:'Tajawal',sans-serif; }
@@ -700,13 +704,12 @@
 
 <script>
   // ==========================================
-  // Service Worker مدمج
+  // Service Worker
   // ==========================================
   if ('serviceWorker' in navigator) {
     const swCode = `
-      const CACHE_NAME = 'maqab-v1';
-      self.addEventListener('install', (e) => { e.waitUntil(self.skipWaiting()); });
-      self.addEventListener('activate', (e) => { e.waitUntil(self.clients.claim()); });
+      self.addEventListener('install', (e) => { self.skipWaiting(); });
+      self.addEventListener('activate', (e) => { self.clients.claim(); });
       self.addEventListener('fetch', (e) => {
         if (e.request.method !== 'GET') return;
         e.respondWith(fetch(e.request).catch(() => caches.match(e.request)));
